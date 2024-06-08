@@ -10,13 +10,12 @@ python = "^3.9"
 pandas = "2.2.2"
 numpy = "1.26.4"
 python-dateutil = "2.9.0.post0"
-sqlalchemy = "2.0.30"
-pyodbc = "5.1.0"
 black = "24.4.2"
 pymssql = "2.3.0"
 pymysql = "1.1.1"
+python-dotenv = "1.0.1"
 
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,4 @@
+{
+  "sales_query": "SELECT s.*, p.practice_name, c.clinic_name, cu.customer_id, cu.name, d.date_field AS invoice_date, (s.unit_cost + s.fixed_cost) AS total_cost, (s.unit_sale + s.fixed_sale) AS total_sale, d.year, d.month, d.month_desc, d.month_short_desc, pr.product_name FROM f_sales s LEFT JOIN d_practice p ON p.practice_tk = s.practice_tk LEFT JOIN d_clinic c ON c.clinic_tk = s.clinic_tk LEFT JOIN d_customer cu ON cu.customer_tk = s.customer_tk LEFT JOIN d_product pr ON pr.product_tk = s.product_tk LEFT JOIN d_date d ON d.date_tk = s.invoice_date_tk",
+  "customers_query": "SELECT cu.*, d.date_field, d.year, d.month, d.month_desc, d.month_short_desc, p.practice_name, c.clinic_name FROM d_customer cu LEFT JOIN d_date d ON d.date_tk = cu.created_tk LEFT JOIN d_practice p ON p.practice_tk = cu.practice_tk LEFT JOIN d_clinic c ON c.clinic_tk = cu.clinic_tk WHERE cu.active = 1 AND cu.created_tk IS NOT NULL"
+}
