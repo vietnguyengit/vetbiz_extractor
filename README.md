@@ -1,14 +1,35 @@
 
 # VetBiz Data Extraction
 
-This repository uses `Poetry` for dependency management.
+Although PowerBI dashboard does not directly use this repository, it contains all the Python scripts used by the VetBiz PowerBI dashboard.
 
-## Prerequisites
+You can use the `Poetry` configurations in this repository for setting up a managed runtime environment where the Python scripts are executed, e.g your workstation, the BI Gateway cloud instance etc. Please follow the `Setup Essential Runtime Environment` section.
 
-- Miniconda
-- Python 3.9
+If you have to troubleshoot or modify the scripts, your can use any IDEs that support Python (e.g Visual Studio Code, PyCharm etc.) to work with this repository. Please follow the instructions at the `Development` section.
 
-## Installation
+## 1. Setup Essential Runtime Environment
+
+To set up the essential runtime environment for this project, follow the steps below:
+
+### Step 1: Install Python 3.9 or above
+
+Make sure you have Python 3.9 or later installed on your system.
+
+### Step 2: Install Poetry
+
+```sh
+pip install poetry
+```
+
+### Step 3: Install Required Dependencies
+
+Navigate to the project's root directory and install the dependencies specified in the `pyproject.toml` file by running:
+
+```sh
+poetry install
+```
+
+## 2. Development
 
 ### Step 1: Install Miniconda
 
@@ -78,6 +99,8 @@ To run the application without limiting the number of records fetched:
 ```sh
 poetry run python main.py
 ```
+
+**Note:** it can take over 15 minutes to fetch full records.
 
 ### With Limit Parameter
 
