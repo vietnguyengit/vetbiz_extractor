@@ -74,9 +74,9 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
         for consult_products_sale_record in consult_products_sale_records:
             for dental_products_sale_record in dental_products_sale_records:
                 if (
-                    consult_products_sale_record[1] == dental_products_sale_record[1]
-                    and consult_products_sale_record[2] + timedelta(days=period)
-                    <= dental_products_sale_record[2]
+                        consult_products_sale_record[1] == dental_products_sale_record[1]
+                        and consult_products_sale_record[2] <= dental_products_sale_record[2] <=
+                        consult_products_sale_record[2] + timedelta(days=period)
                 ):
                     results.append(dental_products_sale_record)
         return (
@@ -86,13 +86,13 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
         )
 
     # Filter dental products
-    unique_sales_by_dental_products = filter_sales_data(sales_data, dental_products)
+    unique_dental_products_sales = filter_sales_data(sales_data, dental_products)
     # Filter consult products
-    unique_sales_by_consult_products = filter_sales_data(sales_data, consult_products)
+    unique_consult_products_sales = filter_sales_data(sales_data, consult_products)
 
     return find_dental_sales_within_days(
-        unique_sales_by_consult_products,
-        unique_sales_by_dental_products,
+        unique_consult_products_sales,
+        unique_dental_products_sales,
         days_threshold,
     )
 
