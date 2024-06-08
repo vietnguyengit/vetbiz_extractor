@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from vetbiz_extractor.utils.common import end_of_month, get_products_list
 
 
-def get_follow_up_sales_after_consultation(df_sales_full):
+def get_follow_up_consults(df_sales_full):
     all_products = df_sales_full["product_name"].unique()
     consult_products = get_products_list(all_products, "consult")
 
@@ -15,7 +15,7 @@ def get_follow_up_sales_after_consultation(df_sales_full):
     # A single customer may be linked to multiple consults, so group by customer as well.
     consults_grouped_by_customer = sorted_consults_df.groupby("customer_tk")
 
-    def get_follow_up_sales_from_consults(consults_grouped_df, days_threshold=14):
+    def get_follow_up_within_days(consults_grouped_df, days_threshold=14):
         """
         Extract follow-up sale IDs from consults (grouped by customer)
         for follow-up sales based on invoice dates within a given threshold.
@@ -32,7 +32,7 @@ def get_follow_up_sales_after_consultation(df_sales_full):
         ]
         return sale_ids
 
-    follow_up_sale_ids = get_follow_up_sales_from_consults(consults_grouped_by_customer)
+    follow_up_sale_ids = get_follow_up_within_days(consults_grouped_by_customer)
     return consults_df[consults_df["sale_id"].isin(follow_up_sale_ids)].reset_index(
         drop=True
     )
