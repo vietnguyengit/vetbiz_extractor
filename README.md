@@ -1,8 +1,6 @@
 
 # VetBiz Data Extraction
 
-Although PowerBI dashboard does not directly use this repository, it contains all the Python scripts used by the VetBiz PowerBI dashboard.
-
 You can use the `Poetry` configurations in this repository for setting up a managed runtime environment where the Python scripts are executed, e.g your workstation, the BI Gateway cloud instance etc. Please follow the `Setup Essential Runtime Environment` section.
 
 If you have to troubleshoot or modify the scripts, your can use any IDEs that support Python (e.g Visual Studio Code, PyCharm etc.) to work with this repository. Please follow the instructions at the `Development` section.

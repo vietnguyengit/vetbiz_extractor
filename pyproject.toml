@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "vetbiz-bi-python"
-version = "1.6.0"
-description = "Poetry dependency management for VetBizBI Python scripts"
+name = "vetbiz_extractor"
+version = "0.1.0"
+description = "vetbiz_extractor is a Python library for VetBiz's PowerBI dashboard"
 authors = ["Viet Nguyen <vietnguyenswin@outlook.com>"]
 readme = "README.md"
 

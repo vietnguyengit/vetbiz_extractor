@@ -1,6 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from utils.utils import fetch_data_in_batches, end_of_month
+from vetbiz_extractor.utils.common import fetch_data_in_batches, end_of_month
 
 
 class ExtractInsights:
@@ -66,7 +66,7 @@ class ExtractInsights:
             drop=True
         )
 
-    def extract_consults_dental_data(self, df_sales_full):
+    def extract_dental_sales_followed_consults(self, df_sales_full):
         all_products = df_sales_full["product_name"].unique()
         dental_products = self.get_products_list(all_products, "dental")
         consult_products = self.get_products_list(all_products, "consult")
@@ -86,11 +86,11 @@ class ExtractInsights:
             )
             return unique_sales.values
 
-        def find_consults_by_dental(
+        def find_dental_sales_within_days(
             consult_products_sale_records, dental_products_sale_records, days=14
         ):
             """
-            # Find consults by dental products
+            find dental sales that occurred within 14 days (or days variable) after a consultation
             :param consult_products_sale_records:
             :param dental_products_sale_records:
             :param days:
@@ -123,34 +123,9 @@ class ExtractInsights:
             df_sales_full, consult_products
         )
 
-        return find_consults_by_dental(
+        return find_dental_sales_within_days(
             unique_sales_by_consult_products, unique_sales_by_dental_products
         )
-
-        # def find_dental_followed_by_consults(
-        #     dental_products_sale_records, consult_products_sale_records, days=14
-        # ):
-        #     results = []
-        #     for dental_products_sale_record in dental_products_sale_records:
-        #         for consult_products_sale_record in consult_products_sale_records:
-        #             if (
-        #                 dental_products_sale_record[1]
-        #                 == consult_products_sale_record[1]
-        #                 and dental_products_sale_record[2] + timedelta(days=days)
-        #                 >= consult_products_sale_record[2]
-        #             ):
-        #                 results.append(consult_products_sale_record)
-        #     return (
-        #         pd.DataFrame(
-        #             results, columns=["clinic_tk", "customer_tk", "invoice_date"]
-        #         )
-        #         .drop_duplicates()
-        #         .reset_index(drop=True)
-        #     )
-        #
-        # return find_dental_followed_by_consults(
-        #     unique_sales_by_dental_products, unique_sales_by_consult_products
-        # )
 
     def extract_lapsed_clients(self, df_sales_full):
         columns = list(df_sales_full.columns) + ["l_period"]
