@@ -3,11 +3,11 @@ from datetime import datetime, timedelta
 from vetbiz_extractor.utils.common import end_of_month, get_products_list
 
 
-def get_follow_up_consults(df_sales_full):
-    all_products = df_sales_full["product_name"].unique()
+def get_follow_up_consults(sales_data, days_threshold=14):
+    all_products = sales_data["product_name"].unique()
     consult_products = get_products_list(all_products, "consult")
 
-    consults_df = df_sales_full[df_sales_full.product_name.isin(consult_products)]
+    consults_df = sales_data[sales_data.product_name.isin(consult_products)]
     # this workflow involves comparing days difference (e.g 14 days threshold),
     # it's important to sort with invoice_date first
     sorted_consults_df = consults_df.sort_values(by=["invoice_date"])
@@ -15,12 +15,12 @@ def get_follow_up_consults(df_sales_full):
     # A single customer may be linked to multiple consults, so group by customer as well.
     consults_grouped_by_customer = sorted_consults_df.groupby("customer_tk")
 
-    def get_follow_up_within_days(consults_grouped_df, days_threshold=14):
+    def get_follow_up_within_days(consults_grouped_df, period):
         """
         Extract follow-up sale IDs from consults (grouped by customer)
-        for follow-up sales based on invoice dates within a given threshold.
+        for follow-up sales based on invoice dates within a given period.
         :param consults_grouped_df:
-        :param days_threshold:
+        :param period:
         :return:
         """
         sale_ids = [
@@ -28,18 +28,20 @@ def get_follow_up_consults(df_sales_full):
             for _, group in consults_grouped_df
             for i in range(1, len(group))
             if (group["invoice_date"].iloc[i] - group["invoice_date"].iloc[i - 1]).days
-            <= days_threshold
+            <= period
         ]
         return sale_ids
 
-    follow_up_sale_ids = get_follow_up_within_days(consults_grouped_by_customer)
+    follow_up_sale_ids = get_follow_up_within_days(
+        consults_grouped_by_customer, days_threshold
+    )
     return consults_df[consults_df["sale_id"].isin(follow_up_sale_ids)].reset_index(
         drop=True
     )
 
 
-def get_dental_sales_after_consultation(df_sales_full):
-    all_products = df_sales_full["product_name"].unique()
+def get_dental_sales_after_consultation(sales_data, days_threshold=14):
+    all_products = sales_data["product_name"].unique()
     dental_products = get_products_list(all_products, "dental")
     consult_products = get_products_list(all_products, "consult")
 
@@ -59,13 +61,13 @@ def get_dental_sales_after_consultation(df_sales_full):
         return unique_sales.values
 
     def find_dental_sales_within_days(
-        consult_products_sale_records, dental_products_sale_records, days=14
+        consult_products_sale_records, dental_products_sale_records, period
     ):
         """
-        find dental sales that occurred within 14 days (or days variable) after a consultation
+        find dental sales that occurred within 14 days (or period variable) after a consultation
         :param consult_products_sale_records:
         :param dental_products_sale_records:
-        :param days:
+        :param period:
         :return:
         """
         results = []
@@ -73,7 +75,7 @@ def get_dental_sales_after_consultation(df_sales_full):
             for dental_products_sale_record in dental_products_sale_records:
                 if (
                     consult_products_sale_record[1] == dental_products_sale_record[1]
-                    and consult_products_sale_record[2] + timedelta(days=days)
+                    and consult_products_sale_record[2] + timedelta(days=period)
                     <= dental_products_sale_record[2]
                 ):
                     results.append(dental_products_sale_record)
@@ -84,19 +86,19 @@ def get_dental_sales_after_consultation(df_sales_full):
         )
 
     # Filter dental products
-    unique_sales_by_dental_products = filter_sales_data(df_sales_full, dental_products)
+    unique_sales_by_dental_products = filter_sales_data(sales_data, dental_products)
     # Filter consult products
-    unique_sales_by_consult_products = filter_sales_data(
-        df_sales_full, consult_products
-    )
+    unique_sales_by_consult_products = filter_sales_data(sales_data, consult_products)
 
     return find_dental_sales_within_days(
-        unique_sales_by_consult_products, unique_sales_by_dental_products
+        unique_sales_by_consult_products,
+        unique_sales_by_dental_products,
+        days_threshold,
     )
 
 
-def get_lapsed_clients(df_sales_full):
-    columns = list(df_sales_full.columns) + ["l_period"]
+def get_lapsed_clients(sales_data):
+    columns = list(sales_data.columns) + ["l_period"]
     current_year, current_month = datetime.now().year, datetime.now().month
     all_df_values = []
     counter = 0
@@ -131,13 +133,13 @@ def get_lapsed_clients(df_sales_full):
                     )
                 )
 
-                p1_df = df_sales_full[
-                    (df_sales_full.invoice_date >= p1_start)
-                    & (df_sales_full.invoice_date <= p1_end)
+                p1_df = sales_data[
+                    (sales_data.invoice_date >= p1_start)
+                    & (sales_data.invoice_date <= p1_end)
                 ]
-                p2_df = df_sales_full[
-                    (df_sales_full.invoice_date >= p2_start)
-                    & (df_sales_full.invoice_date <= p2_end)
+                p2_df = sales_data[
+                    (sales_data.invoice_date >= p2_start)
+                    & (sales_data.invoice_date <= p2_end)
                 ]
 
                 temp_df = p1_df[

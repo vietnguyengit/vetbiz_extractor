@@ -1,17 +1,15 @@
 
-# VetBiz Data Extraction
+# VetBiz Data Extraction Library
 
-You can use the `Poetry` configurations in this repository for setting up a managed runtime environment where the Python scripts are executed, e.g your workstation, the BI Gateway cloud instance etc. Please follow the `Setup Essential Runtime Environment` section.
+This repository provides a library for the VetBiz PowerBI dashboard's Python scripts.
 
-If you have to troubleshoot or modify the scripts, your can use any IDEs that support Python (e.g Visual Studio Code, PyCharm etc.) to work with this repository. Please follow the instructions at the `Development` section.
+## I. Setup Essential Runtime Environment
 
-## 1. Setup Essential Runtime Environment
-
-To set up the essential runtime environment for this project, follow the steps below:
+To set up the essential runtime environment, follow the steps below:
 
 ### Step 1: Install Python 3.9 or above
 
-Make sure you have Python 3.9 or later installed on your system.
+Make sure you have Python 3.9 or later installed on your system to use this library.
 
 ### Step 2: Install Poetry
 
@@ -27,90 +25,128 @@ Navigate to the project's root directory and install the dependencies specified 
 poetry install
 ```
 
-## 2. Development
+## II. Method Reference
 
-### Step 1: Install Miniconda
+### 1. fetch_data_in_batches
 
-If you don't already have Miniconda installed, you can download and install it from the [Miniconda website](https://docs.conda.io/en/latest/miniconda.html).
+Fetch data from the database in batches.
 
-### Step 2: Create a Virtual Environment
+#### Parameters
 
-Create a new virtual environment using Python 3.9:
+- **`query` (str):** The SQL query to fetch data.
+- **`db_user` (str):** The database username.
+- **`db_password` (str):** The database password.
+- **`db_host` (str):** The database host.
+- **`db_name` (str):** The database name.
+- **`db_port` (int, optional):** The database port (default is 3306).
+- **`batch_size` (int, optional):** The number of records to fetch per batch (default is 10,000).
 
-```sh
-conda create -n vetbiz-env python=3.9
+#### Sample usage
+
+```python
+# Fetch sales data
+df = fetch_data_in_batches(
+    query="SELECT * FROM aTable WHERE ...",
+    db_user="username",
+    db_password="password",
+    db_host=3306,
+    db_name="sample_db"
+)
 ```
 
-Activate the virtual environment:
+### 2. get_follow_up_consults
 
-```sh
-conda activate vetbiz-env
+Get follow up within 14 days from consults
+
+#### Parameters
+
+- **`sales_data` (Dataframe):** The aggregated sales data
+- **`days_threshold` (int, optional):** The days threshold (default is 14).
+
+#### Sample usage
+
+```python
+follow_up_df = get_follow_up_consults(df_sales_full)
 ```
 
-### Step 3: Install Poetry
+### 3. get_dental_sales_after_consultation
 
-Install Poetry if you don't already have it:
+Get dental sales within 14 days after consultation
 
-```sh
-pip install poetry
+#### Parameters
+
+- **`sales_data` (Dataframe):** The aggregated sales data
+- **`days_threshold` (int, optional):** The days threshold (default is 14).
+
+#### Sample usage
+
+```python
+consults_to_dental_df = get_dental_sales_after_consultation(df_sales_full)
 ```
 
-Navigate to the project directory and install the dependencies:
+### 4. get_lapsed_clients
 
-```sh
-poetry install
+Get lapsed clients
+
+#### Parameters
+
+- **`sales_data` (Dataframe):** The aggregated sales data
+
+#### Sample usage
+
+```python
+lapsed_clients_df = get_lapsed_clients(df_sales_full)
 ```
 
-### Step 4: Prepare the Environment
+## III. Import methods
 
-Create a `.env` file in the project's root directory and add your database credentials:
+After installing this library, you would be able to import its methods.
 
-```dotenv
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=your_db_host
-DB_PORT=your_db_port
-DB_NAME=your_db_name
+```python
+from vetbiz_extractor.utils.common import (
+    fetch_data_in_batches
+)
+
+from vetbiz_extractor.core.insights_extractor import (
+    get_lapsed_clients,
+    get_follow_up_consults,
+    get_dental_sales_after_consultation,
+)
 ```
 
-Make sure to replace `your_db_user`, `your_db_password`, `your_db_host`, `your_db_port`, and `your_db_name` with the data warehouse actual credentials.
+## IV. Queries
 
-### Step 5: Define Queries
+### Sales data
 
-Queries are defined in `queries.json` file in the project's root directory. The file should look like this:
-
-```json
-{
-  "sales_query": "SELECT ...",
-  "customers_query": "SELECT ..."
-}
+```sql
+SELECT s.*, 
+       p.practice_name, 
+       c.clinic_name, 
+       cu.customer_id, 
+       cu.name,
+       d.date_field AS invoice_date, 
+       (s.unit_cost + s.fixed_cost) AS total_cost, 
+       (s.unit_sale + s.fixed_sale) AS total_sale, 
+       d.year, 
+       d.month, 
+       d.month_desc, 
+       d.month_short_desc,
+       pr.product_name 
+FROM f_sales s
+LEFT JOIN d_practice p ON p.practice_tk = s.practice_tk
+LEFT JOIN d_clinic c ON c.clinic_tk = s.clinic_tk
+LEFT JOIN d_customer cu ON cu.customer_tk = s.customer_tk
+LEFT JOIN d_product pr ON pr.product_tk = s.product_tk
+LEFT JOIN d_date d ON d.date_tk = s.invoice_date_tk;
 ```
 
-Replace the placeholder text with your actual SQL queries.
+### Customers data
 
-## Running the Application
-
-### Without Limit Parameter
-
-To run the application without limiting the number of records fetched:
-
-```sh
-poetry run python main.py
+```sql
+SELECT cu.*, d.date_field, d.year, d.month, d.month_desc, d.month_short_desc, p.practice_name, c.clinic_name 
+FROM d_customer cu
+LEFT JOIN d_date d ON d.date_tk = cu.created_tk
+LEFT JOIN d_practice p ON p.practice_tk = cu.practice_tk
+LEFT JOIN d_clinic c ON c.clinic_tk = cu.clinic_tk
+WHERE cu.active = 1 AND cu.created_tk IS NOT NULL;
 ```
-
-**Note:** it can take over 15 minutes to fetch full records.
-
-### With Limit Parameter
-
-To run the application with a limit on the number of records fetched, use the `--limit` parameter:
-
-```sh
-poetry run python main.py --limit 100
-```
-
-Replace `100` with the desired limit on the number of records.
-
-## Additional Information
-
-- The environment variables for database credentials are validated at runtime.
-- The queries from `queries.json` are also validated, and the application will terminate if they are not correctly defined.
