@@ -112,3 +112,11 @@ def validate_queries(queries):
             print(f"Error: Missing required query '{query}' in queries.json")
             return False
     return True
+
+
+def get_products_list(products, keyword):
+    return [
+        product
+        for product in products
+        if isinstance(product, str) and keyword in product.lower()
+    ]
