@@ -32,7 +32,7 @@ def measure_execution_time(script_function):
 
 
 def fetch_data_in_batches(
-    query, db_user, db_password, db_host, db_port, db_name, batch_size=10000
+    query, db_user, db_password, db_host, db_name, db_port=3306, batch_size=10000
 ):
     """
     Fetch data from the database in batches.
