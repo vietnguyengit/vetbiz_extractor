@@ -5,7 +5,7 @@ import pymssql
 import calendar
 import os
 from datetime import datetime
-from typing import List, Tuple, Union, Callable, Any
+from typing import List, Tuple, Union, Callable, Any, Optional
 
 
 def measure_execution_time(script_function: Callable[..., Any]) -> Callable[..., Any]:
@@ -36,6 +36,7 @@ def fetch_xero_journals_data_from_etani(
     db_password: str,
     db_name: str,
     journals_tables_list: List[str],
+    query_limit: Optional[int] = None,
 ) -> pd.DataFrame:
     try:
         with pymssql.connect(
@@ -47,6 +48,9 @@ def fetch_xero_journals_data_from_etani(
             all_journals_data = []
             for journal_table in journals_tables_list:
                 query = f"SELECT * FROM {journal_table}"
+                if query_limit:
+                    query += f" LIMIT {query_limit}"
+
                 journal_data = pd.read_sql_query(query, conn)
                 all_journals_data.append(journal_data)
             return pd.concat(all_journals_data)
@@ -68,8 +72,8 @@ def fetch_data_in_batches(
     db_password: str,
     db_host: str,
     db_name: str,
-    db_port: int = 3306,
-    batch_size: int = 10000,
+    db_port: Optional[int] = 3306,
+    batch_size: Optional[int] = 10000,
 ) -> pd.DataFrame:
     """
     Fetch data from the database in batches.
