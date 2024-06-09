@@ -1,14 +1,30 @@
 import pandas as pd
 from datetime import datetime, timedelta
-from vetbiz_extractor.utils.common import end_of_month, get_products_list
+from vetbiz_extractor.utils.common import (
+    end_of_month,
+    get_products_list,
+    get_date_range_for_month,
+    filter_data_for_date_range,
+)
+from dateutil.relativedelta import relativedelta
 
 
-def get_follow_up_consults(sales_data, days_threshold=14):
+def get_follow_up_consults(
+    sales_data: pd.DataFrame, days_threshold: int = 14
+) -> pd.DataFrame:
+    """
+    Filter the sales data to retrieve follow-up consults within a specified days threshold.
+
+    :param sales_data: DataFrame containing sales data.
+    :param days_threshold: Number of days to define the follow-up threshold (default is 14 days).
+    :return: DataFrame filtered for follow-up consults within the specified days threshold.
+    """
+
     all_products = sales_data["product_name"].unique()
     consult_products = get_products_list(all_products, "consult")
 
     consults_df = sales_data[sales_data.product_name.isin(consult_products)]
-    # this workflow involves comparing days difference (e.g 14 days threshold),
+    # this workflow involves comparing days difference
     # it's important to sort with invoice_date first
     sorted_consults_df = consults_df.sort_values(by=["invoice_date"])
     # Follow-up counts for each customer.
@@ -40,7 +56,17 @@ def get_follow_up_consults(sales_data, days_threshold=14):
     )
 
 
-def get_dental_sales_after_consultation(sales_data, days_threshold=14):
+def get_dental_sales_after_consultation(
+    sales_data: pd.DataFrame, days_threshold: int = 14
+) -> pd.DataFrame:
+    """
+    Filter the sales data to retrieve dental sales made after consultations within a specified days threshold.
+
+    :param sales_data: DataFrame containing sales data.
+    :param days_threshold: Number of days to define the threshold for sales after consultation (default is 14 days).
+    :return: DataFrame filtered for dental sales made after consultations within the specified days threshold.
+    """
+
     all_products = sales_data["product_name"].unique()
     dental_products = get_products_list(all_products, "dental")
     consult_products = get_products_list(all_products, "consult")
@@ -73,10 +99,14 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
         results = []
         for consult_products_sale_record in consult_products_sale_records:
             for dental_products_sale_record in dental_products_sale_records:
-                if (
-                        consult_products_sale_record[1] == dental_products_sale_record[1]
-                        and consult_products_sale_record[2] <= dental_products_sale_record[2] <=
-                        consult_products_sale_record[2] + timedelta(days=period)
+                if consult_products_sale_record[1] == dental_products_sale_record[
+                    1
+                ] and consult_products_sale_record[2] <= dental_products_sale_record[
+                    2
+                ] <= consult_products_sale_record[
+                    2
+                ] + timedelta(
+                    days=period
                 ):
                     results.append(dental_products_sale_record)
         return (
@@ -97,14 +127,23 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
     )
 
 
-def get_lapsed_clients(sales_data):
+def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Identify and filter lapsed clients from the sales data.
+
+    A lapsed client is typically defined as a client who has not made any purchases within a certain period.
+
+    :param sales_data: DataFrame containing sales data with relevant date and client information.
+    :return: DataFrame filtered to include only lapsed clients.
+    """
+
     columns = list(sales_data.columns) + ["l_period"]
     current_year, current_month = datetime.now().year, datetime.now().month
     all_df_values = []
     counter = 0
 
-    def get_lapsed_customers(p1_df, p2_df):
-        return set(p1_df["customer_tk"]) - set(p2_df["customer_tk"])
+    def get_lapsed_customers(df1, df2):
+        return set(df1["customer_tk"]) - set(df2["customer_tk"])
 
     for year in range(2018, current_year + 1):
         for month in range(1, 13):
@@ -152,3 +191,87 @@ def get_lapsed_clients(sales_data):
                 all_df_values = all_df_values + temp_df_values
 
     return pd.DataFrame(data=all_df_values, columns=columns)
+
+
+def get_filtered_active_customers(
+    customers_from_sales_data_df: pd.DataFrame, months_threshold: int = 18
+) -> pd.DataFrame:
+    """
+    Filter the customers who have been active within a specified number of months.
+
+    Active customers are defined as those who have made a purchase within the specified months' threshold.
+
+    :param customers_from_sales_data_df: DataFrame containing customer sales data.
+    :param months_threshold: Number of months to define the threshold for customer activity (default is 18 months).
+    :return: DataFrame filtered to include only active customers.
+    """
+
+    filtered_active_customers_list = []
+    active_customers_df_columns = [
+        "visit_id",
+        "sale_id",
+        "clinic_tk",
+        "customer_tk",
+        "customer_id",
+        "active",
+        "patient_id",
+        "practice_name",
+        "clinic_name",
+        "user_name",
+        "product_name",
+        "unit_cost",
+        "fixed_cost",
+        "unit_sale",
+        "fixed_sale",
+        "date_tk",
+        "date_field",
+        "month",
+        "year",
+        "clinician",
+    ]
+    current_year = datetime.now().year
+
+    def get_unique_customers(df):
+        """Returns a set of unique customers from the DataFrame."""
+        return set(df.customer_tk.unique())
+
+    def get_customers_from_period(input_df, start, threshold):
+        before_date = start - relativedelta(months=threshold)
+        period_data_df = filter_data_for_date_range(
+            input_df,
+            before_date,
+            start - relativedelta(days=1),
+        )
+        return get_unique_customers(period_data_df)
+
+    for year in range(2018, current_year + 1):
+        for month in range(1, 13):
+            start_date, end_date = get_date_range_for_month(year, month)
+            current_month_data_df = filter_data_for_date_range(
+                customers_from_sales_data_df, start_date, end_date
+            )
+
+            all_customers_current_month = get_unique_customers(current_month_data_df)
+            all_customers_from_period = get_customers_from_period(
+                customers_from_sales_data_df, start_date, months_threshold
+            )
+
+            # Find active customers in the intersection
+            active_customers_current_month = all_customers_current_month.intersection(
+                all_customers_from_period
+            )
+            active_customers_current_month_df = current_month_data_df[
+                current_month_data_df["customer_tk"].isin(
+                    active_customers_current_month
+                )
+            ]
+
+            # Convert DataFrame to list and append to active customers list
+            filtered_active_customers_list.extend(
+                active_customers_current_month_df.values.tolist()
+            )
+
+    # Create a DataFrame for all filtered active customers
+    return pd.DataFrame(
+        filtered_active_customers_list, columns=active_customers_df_columns
+    ).reset_index(drop=True)
