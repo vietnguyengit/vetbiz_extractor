@@ -1,5 +1,4 @@
 import pandas as pd
-import calendar
 from datetime import datetime, timedelta
 from vetbiz_extractor.utils.common import (
     end_of_month,
@@ -25,7 +24,7 @@ def get_follow_up_consults(
     consult_products = get_products_list(all_products, "consult")
 
     consults_df = sales_data[sales_data.product_name.isin(consult_products)]
-    # this workflow involves comparing days difference (e.g 14 days threshold),
+    # this workflow involves comparing days difference
     # it's important to sort with invoice_date first
     sorted_consults_df = consults_df.sort_values(by=["invoice_date"])
     # Follow-up counts for each customer.
@@ -143,8 +142,8 @@ def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
     all_df_values = []
     counter = 0
 
-    def get_lapsed_customers(p1_df, p2_df):
-        return set(p1_df["customer_tk"]) - set(p2_df["customer_tk"])
+    def get_lapsed_customers(df1, df2):
+        return set(df1["customer_tk"]) - set(df2["customer_tk"])
 
     for year in range(2018, current_year + 1):
         for month in range(1, 13):
@@ -200,7 +199,7 @@ def get_filtered_active_customers(
     """
     Filter the customers who have been active within a specified number of months.
 
-    Active customers are defined as those who have made a purchase within the specified months threshold.
+    Active customers are defined as those who have made a purchase within the specified months' threshold.
 
     :param customers_from_sales_data_df: DataFrame containing customer sales data.
     :param months_threshold: Number of months to define the threshold for customer activity (default is 18 months).
@@ -236,14 +235,12 @@ def get_filtered_active_customers(
         """Returns a set of unique customers from the DataFrame."""
         return set(df.customer_tk.unique())
 
-    def get_customers_from_period(
-        customers_from_sales_data_df, start_date, months_threshold
-    ):
-        before_date = start_date - relativedelta(months=months_threshold)
+    def get_customers_from_period(input_df, start, threshold):
+        before_date = start - relativedelta(months=threshold)
         period_data_df = filter_data_for_date_range(
-            customers_from_sales_data_df,
+            input_df,
             before_date,
-            start_date - relativedelta(days=1),
+            start - relativedelta(days=1),
         )
         return get_unique_customers(period_data_df)
 
