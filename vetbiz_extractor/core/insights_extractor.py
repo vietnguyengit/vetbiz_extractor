@@ -218,64 +218,48 @@ def get_filtered_active_customers(
     :return: A pandas DataFrame filtered to include only the active customers.
     """
 
-    filtered_active_customers_list = []
-    active_customers_df_columns = [
-        "visit_id",
-        "sale_id",
-        "clinic_tk",
-        "customer_tk",
-        "customer_id",
-        "active",
-        "patient_id",
-        "practice_name",
-        "clinic_name",
-        "user_name",
-        "product_name",
-        "unit_cost",
-        "fixed_cost",
-        "unit_sale",
-        "fixed_sale",
-        "date_tk",
-        "date_field",
-        "month",
-        "year",
-        "clinician",
-    ]
+    # Retrieve column names from the input DataFrame
+    active_customers_df_columns = customers_from_sales_data_df.columns
+
     current_year = datetime.now().year
+    filtered_active_customers_list = []
 
     def get_unique_customers(df):
         """Returns a set of unique customers from the DataFrame."""
         return set(df.customer_tk.unique())
 
-    def get_customers_from_period(input_df, start, threshold):
-        before_date = start - relativedelta(months=threshold)
-        period_data_df = filter_data_for_date_range(
-            input_df,
-            before_date,
-            start - relativedelta(days=1),
-        )
-        return get_unique_customers(period_data_df)
-
     for year in range(start_year, current_year + 1):
         for month in range(1, 13):
             start_date, end_date = get_date_range_for_month(year, month)
+
+            # Customers in the current month
             current_month_data_df = filter_data_for_date_range(
                 customers_from_sales_data_df, start_date, end_date
             )
 
-            all_customers_current_month = get_unique_customers(current_month_data_df)
-            all_customers_from_period = get_customers_from_period(
-                customers_from_sales_data_df, start_date, months_threshold
+            active_window_start_date = start_date - relativedelta(
+                months=months_threshold
             )
 
-            # Find active customers in the intersection
-            active_customers_current_month = all_customers_current_month.intersection(
-                all_customers_from_period
+            # Customers active in the period months_threshold before the current month
+            active_period_data_df = filter_data_for_date_range(
+                customers_from_sales_data_df,
+                active_window_start_date,
+                start_date - relativedelta(days=1),
             )
+
+            # Get unique customer IDs
+            active_customers_current_month = get_unique_customers(current_month_data_df)
+            active_customers_period = get_unique_customers(active_period_data_df)
+
+            # Find active customers in the intersection
+            active_customers_to_keep = active_customers_current_month.intersection(
+                active_customers_period
+            )
+
+            # Filter the current month data to keep the active customers
             active_customers_current_month_df = current_month_data_df[
-                current_month_data_df["customer_tk"].isin(
-                    active_customers_current_month
-                )
+                current_month_data_df["customer_tk"].isin(active_customers_to_keep)
             ]
 
             # Convert DataFrame to list and append to active customers list
