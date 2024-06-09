@@ -196,7 +196,6 @@ def validate_queries(queries: Dict[str, Any]) -> bool:
 
     :param queries: Dictionary containing query data.
     :return: True if all required queries are present, False otherwise.
-    :raises ValueError: If any required query is missing.
     """
     required_queries = {"sales_query", "customers_query"}
 
@@ -204,9 +203,7 @@ def validate_queries(queries: Dict[str, Any]) -> bool:
 
     if missing_queries:
         for missing_query in missing_queries:
-            logging.error(
-                f"Error: Missing required query '{missing_query}' in queries.json"
-            )
+            print(f"Error: Missing required query '{missing_query}' in queries.json")
         return False
 
     return True
