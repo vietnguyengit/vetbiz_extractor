@@ -3,150 +3,83 @@
 
 This repository provides a library for the VetBiz PowerBI dashboard's Python scripts.
 
-## I. Setup Essential Runtime Environment
+## API Reference
 
-To set up the essential runtime environment, follow the steps below:
+### fetch_xero_journals_data_from_etani
 
-### Step 1: Install Python 3.9 or above
+Fetches data from multiple Xero journals tables in the Etani SQL database and combines them into a single DataFrame.
 
-Make sure you have Python 3.9 or later installed on your system to use this library.
+**Parameters:**
+- `db_server (str)`: The database server address.
+- `db_user (str)`: The username for the database.
+- `db_password (str)`: The password for the database user.
+- `db_name (str)`: The name of the database.
+- `journals_tables_list (List[str])`: A list of journal table names to fetch data from.
+- `query_limit (Optional[int])`: An optional limit on the number of rows per table.
+- `batch_size (Optional[int])`: An optional batch size for fetching data.
 
-### Step 2: Install Poetry
+**Returns:**
+- `pd.DataFrame`: A DataFrame containing the combined data from the specified journal tables.
 
-```sh
-pip install poetry
-```
-
-### Step 3: Install Required Dependencies
-
-Navigate to the project's root directory and install the dependencies specified in the `pyproject.toml` file by running:
-
-```sh
-poetry install
-```
-
-## II. Method Reference
-
-### 1. fetch_data_in_batches
+### fetch_data_in_batches
 
 Fetch data from the database in batches.
 
-#### Parameters
+**Parameters:**
+- `query (str)`: SQL query to execute.
+- `db_user (str)`: Database user.
+- `db_password (str)`: Database password.
+- `db_host (str)`: Database host.
+- `db_port (Optional[int])`: Database port (default is 3306).
+- `db_name (str)`: Database name.
+- `batch_size (Optional[int])`: Number of rows to fetch per batch (default is 10000).
 
-- **`query` (str):** The SQL query to fetch data.
-- **`db_user` (str):** The database username.
-- **`db_password` (str):** The database password.
-- **`db_host` (str):** The database host.
-- **`db_name` (str):** The database name.
-- **`db_port` (int, optional):** The database port (default is 3306).
-- **`batch_size` (int, optional):** The number of records to fetch per batch (default is 10,000).
+**Returns:**
+- `pd.DataFrame`: A DataFrame with the fetched data.
 
-#### Sample usage
+### get_follow_up_consults
 
-```python
-# Fetch sales data
-df = fetch_data_in_batches(
-    query="SELECT * FROM aTable WHERE ...",
-    db_user="username",
-    db_password="password",
-    db_host=3306,
-    db_name="sample_db"
-)
-```
+Filter the sales data to retrieve follow-up consults within a specified days threshold.
 
-### 2. get_follow_up_consults
+**Parameters:**
+- `sales_data (pd.DataFrame)`: DataFrame containing sales data.
+- `days_threshold (int)`: Number of days to define the follow-up threshold (default is 14 days).
 
-Get follow up within 14 days from consults
+**Returns:**
+- `pd.DataFrame`: DataFrame filtered for follow-up consults within the specified days threshold.
 
-#### Parameters
+### get_dental_sales_after_consultation
 
-- **`sales_data` (Dataframe):** The aggregated sales data
-- **`days_threshold` (int, optional):** The days threshold (default is 14).
+Filter the sales data to retrieve dental sales made after consultations within a specified days threshold.
 
-#### Sample usage
+**Parameters:**
+- `sales_data (pd.DataFrame)`: DataFrame containing sales data.
+- `days_threshold (int)`: Number of days to define the threshold for sales after consultation (default is 14 days).
 
-```python
-follow_up_df = get_follow_up_consults(df_sales_full)
-```
+**Returns:**
+- `pd.DataFrame`: DataFrame filtered for dental sales made after consultations within the specified days threshold.
 
-### 3. get_dental_sales_after_consultation
+### get_lapsed_clients
 
-Get dental sales within 14 days after consultation
+Identify and filter lapsed clients from the sales data. A lapsed client is defined as a client who has not made any purchases since a specified start year.
 
-#### Parameters
+**Parameters:**
+- `sales_data (pd.DataFrame)`: Pandas DataFrame containing sales data.
+  It must include a 'last_purchase_date' column with dates of the last purchase.
+- `start_year (Optional[int])`: Optional integer representing the start year from which to measure inactivity (default is 2018).
 
-- **`sales_data` (Dataframe):** The aggregated sales data
-- **`days_threshold` (int, optional):** The days threshold (default is 14).
+**Returns:**
+- `pd.DataFrame`: A DataFrame filtered to include only the lapsed clients who have not made a purchase since the start year.
 
-#### Sample usage
+### get_filtered_active_customers
 
-```python
-consults_to_dental_df = get_dental_sales_after_consultation(df_sales_full)
-```
+Filter the customers who have been active within a specified number of months since a given start year.
 
-### 4. get_lapsed_clients
+**Parameters:**
+- `customers_from_sales_data_df (pd.DataFrame)`: DataFrame containing customer sales data. It must include a 'last_purchase_date' column.
+- `start_year (Optional[int])`: Optional integer representing the start year from which to measure activity (default is 2020).
+- `months_threshold (int)`: Number of months within which a customer must have made a purchase to be considered active (default is 18 months).
 
-Get lapsed clients
+**Returns:**
+- `pd.DataFrame`: A DataFrame filtered to include only the active customers.
 
-#### Parameters
-
-- **`sales_data` (Dataframe):** The aggregated sales data
-
-#### Sample usage
-
-```python
-lapsed_clients_df = get_lapsed_clients(df_sales_full)
-```
-
-## III. Import methods
-
-After installing this library, you would be able to import its methods.
-
-```python
-from vetbiz_extractor.utils.common import (
-    fetch_data_in_batches
-)
-
-from vetbiz_extractor.core.insights_extractor import (
-    get_lapsed_clients,
-    get_follow_up_consults,
-    get_dental_sales_after_consultation,
-)
-```
-
-## IV. Queries
-
-### Sales data
-
-```sql
-SELECT s.*, 
-       p.practice_name, 
-       c.clinic_name, 
-       cu.customer_id, 
-       cu.name,
-       d.date_field AS invoice_date, 
-       (s.unit_cost + s.fixed_cost) AS total_cost, 
-       (s.unit_sale + s.fixed_sale) AS total_sale, 
-       d.year, 
-       d.month, 
-       d.month_desc, 
-       d.month_short_desc,
-       pr.product_name 
-FROM f_sales s
-LEFT JOIN d_practice p ON p.practice_tk = s.practice_tk
-LEFT JOIN d_clinic c ON c.clinic_tk = s.clinic_tk
-LEFT JOIN d_customer cu ON cu.customer_tk = s.customer_tk
-LEFT JOIN d_product pr ON pr.product_tk = s.product_tk
-LEFT JOIN d_date d ON d.date_tk = s.invoice_date_tk;
-```
-
-### Customers data
-
-```sql
-SELECT cu.*, d.date_field, d.year, d.month, d.month_desc, d.month_short_desc, p.practice_name, c.clinic_name 
-FROM d_customer cu
-LEFT JOIN d_date d ON d.date_tk = cu.created_tk
-LEFT JOIN d_practice p ON p.practice_tk = cu.practice_tk
-LEFT JOIN d_clinic c ON c.clinic_tk = cu.clinic_tk
-WHERE cu.active = 1 AND cu.created_tk IS NOT NULL;
-```
