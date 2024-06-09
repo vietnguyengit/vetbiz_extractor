@@ -1,4 +1,3 @@
-from typing import Optional
 import pandas as pd
 from datetime import datetime, timedelta
 from vetbiz_extractor.utils.common import (
@@ -129,7 +128,7 @@ def get_dental_sales_after_consultation(
 
 
 def get_lapsed_clients(
-    sales_data: pd.DataFrame, start_year: Optional[int] = 2018
+    sales_data: pd.DataFrame, start_year: int = 2018
 ) -> pd.DataFrame:
     """
     Identify and filter lapsed clients from the sales data.
@@ -138,8 +137,8 @@ def get_lapsed_clients(
 
     :param sales_data: Pandas DataFrame containing sales data.
                        It must include a 'last_purchase_date' column with dates of the last purchase.
-    :param start_year: Optional integer representing the start year from which to measure inactivity.
-                       Defaults to 2018. Can be set to None to ignore the start year filter and consider all data.
+    :param start_year: integer representing the start year from which to measure inactivity.
+                       Defaults to 2018.
     :return: A pandas DataFrame filtered to include only the lapsed clients who have not made a purchase since the start year.
     """
 
@@ -201,7 +200,7 @@ def get_lapsed_clients(
 
 def get_filtered_active_customers(
     customers_from_sales_data_df: pd.DataFrame,
-    start_year: Optional[int] = 2020,
+    start_year: int = 2020,
     months_threshold: int = 18,
 ) -> pd.DataFrame:
     """
@@ -212,8 +211,8 @@ def get_filtered_active_customers(
 
     :param customers_from_sales_data_df: Pandas DataFrame containing customer sales data.
                                          It must include a 'last_purchase_date' column.
-    :param start_year: Optional integer representing the start year from which to measure activity.
-                       Defaults to 2020. Can be set to None to disable filtering by start year.
+    :param start_year: integer representing the start year from which to measure activity.
+                       Defaults to 2020.
     :param months_threshold: Integer representing the number of months within which a customer
                              must have made a purchase to be considered active. Defaults to 18 months.
     :return: A pandas DataFrame filtered to include only the active customers.

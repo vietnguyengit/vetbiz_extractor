@@ -36,8 +36,8 @@ def fetch_xero_journals_data_from_etani(
     db_password: str,
     db_name: str,
     journals_tables_list: List[str],
+    batch_size: int = 10000,
     query_limit: Optional[int] = None,
-    batch_size: Optional[int] = 10000,
 ) -> pd.DataFrame:
     """
     Fetches data from multiple Xero journals tables in the Etani SQL database and combines them into a single DataFrame.
@@ -47,8 +47,8 @@ def fetch_xero_journals_data_from_etani(
     :param db_password: The password for the database user.
     :param db_name: The name of the database.
     :param journals_tables_list: A list of journal table names to fetch data from.
+    :param batch_size: Number of rows to fetch per batch
     :param query_limit: An optional limit on the number of rows per table.
-    :param batch_size: An optional batch size for fetching data.
     :return: A pandas DataFrame containing the combined data from the specified journal tables.
     """
 
@@ -107,8 +107,8 @@ def fetch_data_in_batches(
     db_password: str,
     db_host: str,
     db_name: str,
-    db_port: Optional[int] = 3306,
-    batch_size: Optional[int] = 10000,
+    db_port: int = 3306,
+    batch_size: int = 10000,
 ) -> pd.DataFrame:
     """
     Fetch data from the database in batches.
