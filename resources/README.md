@@ -9,6 +9,7 @@ The `dev.py` assists debugging and developing the library's methods.
 - Python 3.9 or above
 - Poetry
 - `.env` file
+
   ```dotenv
   DB_USER=
   DB_PASSWORD=
