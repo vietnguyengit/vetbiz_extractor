@@ -3,6 +3,7 @@ import pandas as pd
 import pymysql
 import calendar
 import os
+from datetime import datetime
 
 
 def measure_execution_time(script_function):
@@ -120,3 +121,15 @@ def get_products_list(products, keyword):
         for product in products
         if isinstance(product, str) and keyword in product.lower()
     ]
+
+
+def get_date_range_for_month(year, month):
+    """Returns the start and end date for a given month and year."""
+    start_date = datetime(year, month, 1)
+    end_date = datetime(year, month, calendar.monthrange(year, month)[1])
+    return start_date, end_date
+
+
+def filter_data_for_date_range(df, start_date, end_date):
+    """Filters the DataFrame for entries within the specified date range."""
+    return df[(df["date_field"] >= start_date) & (df["date_field"] <= end_date)]

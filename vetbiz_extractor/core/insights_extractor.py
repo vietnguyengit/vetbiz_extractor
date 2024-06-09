@@ -1,6 +1,13 @@
 import pandas as pd
+import calendar
 from datetime import datetime, timedelta
-from vetbiz_extractor.utils.common import end_of_month, get_products_list
+from vetbiz_extractor.utils.common import (
+    end_of_month,
+    get_products_list,
+    get_date_range_for_month,
+    filter_data_for_date_range,
+)
+from dateutil.relativedelta import relativedelta
 
 
 def get_follow_up_consults(sales_data, days_threshold=14):
@@ -73,10 +80,14 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
         results = []
         for consult_products_sale_record in consult_products_sale_records:
             for dental_products_sale_record in dental_products_sale_records:
-                if (
-                        consult_products_sale_record[1] == dental_products_sale_record[1]
-                        and consult_products_sale_record[2] <= dental_products_sale_record[2] <=
-                        consult_products_sale_record[2] + timedelta(days=period)
+                if consult_products_sale_record[1] == dental_products_sale_record[
+                    1
+                ] and consult_products_sale_record[2] <= dental_products_sale_record[
+                    2
+                ] <= consult_products_sale_record[
+                    2
+                ] + timedelta(
+                    days=period
                 ):
                     results.append(dental_products_sale_record)
         return (
@@ -152,3 +163,83 @@ def get_lapsed_clients(sales_data):
                 all_df_values = all_df_values + temp_df_values
 
     return pd.DataFrame(data=all_df_values, columns=columns)
+
+
+def get_filtered_active_customers(customers_from_sales_data_df, months_threshold=18):
+    """
+    get filtered active customers during the last <months_threshold> (default is 18 months)
+    :param customers_from_sales_data_df:
+    :param months_threshold:
+    :return:
+    """
+    filtered_active_customers_list = []
+    active_customers_df_columns = [
+        "visit_id",
+        "sale_id",
+        "clinic_tk",
+        "customer_tk",
+        "customer_id",
+        "active",
+        "patient_id",
+        "practice_name",
+        "clinic_name",
+        "user_name",
+        "product_name",
+        "unit_cost",
+        "fixed_cost",
+        "unit_sale",
+        "fixed_sale",
+        "date_tk",
+        "date_field",
+        "month",
+        "year",
+        "clinician",
+    ]
+    current_year = datetime.now().year
+
+    def get_unique_customers(df):
+        """Returns a set of unique customers from the DataFrame."""
+        return set(df.customer_tk.unique())
+
+    def get_customers_from_period(
+        customers_from_sales_data_df, start_date, months_threshold
+    ):
+        before_date = start_date - relativedelta(months=months_threshold)
+        period_data_df = filter_data_for_date_range(
+            customers_from_sales_data_df,
+            before_date,
+            start_date - relativedelta(days=1),
+        )
+        return get_unique_customers(period_data_df)
+
+    for year in range(2018, current_year + 1):
+        for month in range(1, 13):
+            start_date, end_date = get_date_range_for_month(year, month)
+            current_month_data_df = filter_data_for_date_range(
+                customers_from_sales_data_df, start_date, end_date
+            )
+
+            all_customers_current_month = get_unique_customers(current_month_data_df)
+            all_customers_from_period = get_customers_from_period(
+                customers_from_sales_data_df, start_date, months_threshold
+            )
+
+            # Find active customers in the intersection
+            active_customers_current_month = all_customers_current_month.intersection(
+                all_customers_from_period
+            )
+            active_customers_current_month_df = current_month_data_df[
+                current_month_data_df["customer_tk"].isin(
+                    active_customers_current_month
+                )
+            ]
+
+            # Convert DataFrame to list and append to active customers list
+            filtered_active_customers_list.extend(
+                active_customers_current_month_df.values.tolist()
+            )
+
+    # Create a DataFrame for all filtered active customers
+    return pd.DataFrame(
+        filtered_active_customers_list, columns=active_customers_df_columns
+    ).reset_index(drop=True)
