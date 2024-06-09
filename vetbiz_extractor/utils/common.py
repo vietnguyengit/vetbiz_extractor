@@ -173,7 +173,16 @@ def end_of_month(year: int, month: int) -> int:
 
 
 def validate_env_vars():
-    required_vars = ["DB_USER", "DB_PASSWORD", "DB_HOST", "DB_NAME"]
+    required_vars = [
+        "DB_USER",
+        "DB_PASSWORD",
+        "DB_HOST",
+        "DB_NAME",
+        "ETANI_DB_USER",
+        "ETANI_DB_PASSWORD",
+        "ETANI_DB_SERVER",
+        "ETANI_DB_NAME",
+    ]
     for var in required_vars:
         if os.getenv(var) is None:
             print(f"Error: Missing required environment variable {var}")
