@@ -65,9 +65,9 @@ def fetch_xero_journals_data_from_etani(
             for journal_table in journals_tables_list:
 
                 if query_limit:
-                    query = f"SELECT TOP {query_limit} FROM {journal_table}"
+                    query = f"SELECT TOP {query_limit} * FROM {journal_table};"
                 else:
-                    query = f"SELECT * FROM {journal_table}"
+                    query = f"SELECT * FROM {journal_table};"
 
                 cursor.execute(query)
 
