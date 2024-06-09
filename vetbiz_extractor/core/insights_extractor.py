@@ -10,7 +10,17 @@ from vetbiz_extractor.utils.common import (
 from dateutil.relativedelta import relativedelta
 
 
-def get_follow_up_consults(sales_data, days_threshold=14):
+def get_follow_up_consults(
+    sales_data: pd.DataFrame, days_threshold: int = 14
+) -> pd.DataFrame:
+    """
+    Filter the sales data to retrieve follow-up consults within a specified days threshold.
+
+    :param sales_data: DataFrame containing sales data.
+    :param days_threshold: Number of days to define the follow-up threshold (default is 14 days).
+    :return: DataFrame filtered for follow-up consults within the specified days threshold.
+    """
+
     all_products = sales_data["product_name"].unique()
     consult_products = get_products_list(all_products, "consult")
 
@@ -47,7 +57,17 @@ def get_follow_up_consults(sales_data, days_threshold=14):
     )
 
 
-def get_dental_sales_after_consultation(sales_data, days_threshold=14):
+def get_dental_sales_after_consultation(
+    sales_data: pd.DataFrame, days_threshold: int = 14
+) -> pd.DataFrame:
+    """
+    Filter the sales data to retrieve dental sales made after consultations within a specified days threshold.
+
+    :param sales_data: DataFrame containing sales data.
+    :param days_threshold: Number of days to define the threshold for sales after consultation (default is 14 days).
+    :return: DataFrame filtered for dental sales made after consultations within the specified days threshold.
+    """
+
     all_products = sales_data["product_name"].unique()
     dental_products = get_products_list(all_products, "dental")
     consult_products = get_products_list(all_products, "consult")
@@ -108,7 +128,16 @@ def get_dental_sales_after_consultation(sales_data, days_threshold=14):
     )
 
 
-def get_lapsed_clients(sales_data):
+def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Identify and filter lapsed clients from the sales data.
+
+    A lapsed client is typically defined as a client who has not made any purchases within a certain period.
+
+    :param sales_data: DataFrame containing sales data with relevant date and client information.
+    :return: DataFrame filtered to include only lapsed clients.
+    """
+
     columns = list(sales_data.columns) + ["l_period"]
     current_year, current_month = datetime.now().year, datetime.now().month
     all_df_values = []
@@ -165,13 +194,19 @@ def get_lapsed_clients(sales_data):
     return pd.DataFrame(data=all_df_values, columns=columns)
 
 
-def get_filtered_active_customers(customers_from_sales_data_df, months_threshold=18):
+def get_filtered_active_customers(
+    customers_from_sales_data_df: pd.DataFrame, months_threshold: int = 18
+) -> pd.DataFrame:
     """
-    get filtered active customers during the last <months_threshold> (default is 18 months)
-    :param customers_from_sales_data_df:
-    :param months_threshold:
-    :return:
+    Filter the customers who have been active within a specified number of months.
+
+    Active customers are defined as those who have made a purchase within the specified months threshold.
+
+    :param customers_from_sales_data_df: DataFrame containing customer sales data.
+    :param months_threshold: Number of months to define the threshold for customer activity (default is 18 months).
+    :return: DataFrame filtered to include only active customers.
     """
+
     filtered_active_customers_list = []
     active_customers_df_columns = [
         "visit_id",

@@ -1,11 +1,38 @@
-from vetbiz_extractor.utils.common import fetch_data_in_batches
+from vetbiz_extractor.utils.common import (
+    fetch_data_in_batches,
+    fetch_xero_journals_data_from_etani,
+)
 from vetbiz_extractor.core.insights_extractor import (
     get_follow_up_consults,
     get_dental_sales_after_consultation,
     get_lapsed_clients,
 )
 
-# Database connection details
+
+# Etani database connection details
+etani_db_user = ""
+etani_db_password = ""
+etani_db_server = ""
+etani_db_name = "TAZTECH_d434a453-c859-41d1-93b7-f367a1572792"
+
+journals_table_names = [
+    "TAZTECH_CLIENT3_XEROBLUE_Journals",
+    "TAZTECH_CLIENT4_XEROBLUE_Journals",
+    "TAZTECH_CLIENT5_XEROBLUE_Journals",
+    "TAZTECH_CLIENT6_XEROBLUE_Journals",
+    "TAZTECH_CLIENT7_XEROBLUE_Journals",
+    "TAZTECH_CLIENT8_XEROBLUE_Journals",
+    "TAZTECH_CLIENT9_XEROBLUE_Journals",
+]
+A_Journals = fetch_xero_journals_data_from_etani(
+    etani_db_server,
+    etani_db_user,
+    etani_db_password,
+    etani_db_name,
+    journals_table_names,
+)
+
+# VetBiz data warehouse database connection details
 db_user = ""
 db_password = ""
 db_host = ""
