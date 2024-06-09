@@ -127,3 +127,4 @@ df_customers_full
 follow_up_df
 consults_to_dental_df
 lapsed_clients_df
+A_Journals

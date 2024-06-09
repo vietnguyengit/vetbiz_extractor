@@ -5,7 +5,7 @@ import pymssql
 import calendar
 import os
 from datetime import datetime
-from typing import List, Tuple, Union, Callable, Any, Optional
+from typing import List, Tuple, Union, Callable, Any, Optional, Dict
 
 
 def measure_execution_time(script_function: Callable[..., Any]) -> Callable[..., Any]:
@@ -37,7 +37,21 @@ def fetch_xero_journals_data_from_etani(
     db_name: str,
     journals_tables_list: List[str],
     query_limit: Optional[int] = None,
+    batch_size: Optional[int] = 10000,
 ) -> pd.DataFrame:
+    """
+    Fetches data from multiple Xero journals tables in the Etani SQL database and combines them into a single DataFrame.
+
+    :param db_server: The database server address.
+    :param db_user: The username for the database.
+    :param db_password: The password for the database user.
+    :param db_name: The name of the database.
+    :param journals_tables_list: A list of journal table names to fetch data from.
+    :param query_limit: An optional limit on the number of rows per table.
+    :param batch_size: An optional batch size for fetching data.
+    :return: A pandas DataFrame containing the combined data from the specified journal tables.
+    """
+
     try:
         with pymssql.connect(
             server=db_server,
@@ -45,16 +59,37 @@ def fetch_xero_journals_data_from_etani(
             password=db_password,
             database=db_name,
         ) as conn:
+            cursor = conn.cursor()
+
             all_journals_data = []
             for journal_table in journals_tables_list:
-                query = f"SELECT * FROM {journal_table}"
+
                 if query_limit:
-                    query += f" LIMIT {query_limit}"
+                    query = f"SELECT TOP {query_limit} FROM {journal_table}"
+                else:
+                    query = f"SELECT * FROM {journal_table}"
 
-                journal_data = pd.read_sql_query(query, conn)
-                all_journals_data.append(journal_data)
-            return pd.concat(all_journals_data)
+                cursor.execute(query)
 
+                # Initialize an empty DataFrame to accumulate the results
+                df = pd.DataFrame()
+                column_names = [desc[0] for desc in cursor.description]
+
+                while True:
+                    rows = cursor.fetchmany(batch_size)
+                    if not rows:
+                        break
+
+                    batch_df = pd.DataFrame(rows, columns=column_names)
+                    batch_df = exclude_all_na_columns(batch_df)
+                    df = pd.concat([df, batch_df], ignore_index=True)
+
+                all_journals_data.append(df)
+
+            cursor.close()
+
+            results = pd.concat(all_journals_data)
+            return results if not results.empty else pd.DataFrame(columns=column_names)
     except pymssql.DatabaseError as e:
         print(f"Database error occurred: {e}")
     except Exception as e:
@@ -115,14 +150,11 @@ def fetch_data_in_batches(
             cursor.close()
             return df if not df.empty else pd.DataFrame(columns=column_names)
     except pymysql.MySQLError as e:
-        print(f"Database error occurred: {e}")  # Replace with logging in production
+        print(f"Database error occurred: {e}")
+        return pd.DataFrame()
     except Exception as e:
-        print(
-            f"An unexpected error occurred: {e}"
-        )  # Replace with logging in production
-    finally:
-        if "conn" in locals() and conn:
-            conn.close()
+        print(f"An unexpected error occurred: {e}")
+        return pd.DataFrame()
 
 
 def end_of_month(year: int, month: int) -> int:
