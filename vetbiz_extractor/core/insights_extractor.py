@@ -1,3 +1,4 @@
+from typing import Optional
 import pandas as pd
 from datetime import datetime, timedelta
 from vetbiz_extractor.utils.common import (
@@ -127,14 +128,19 @@ def get_dental_sales_after_consultation(
     )
 
 
-def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
+def get_lapsed_clients(
+    sales_data: pd.DataFrame, start_year: Optional[int] = 2018
+) -> pd.DataFrame:
     """
     Identify and filter lapsed clients from the sales data.
 
-    A lapsed client is typically defined as a client who has not made any purchases within a certain period.
+    A lapsed client is defined as a client who has not made any purchases since a specified start year.
 
-    :param sales_data: DataFrame containing sales data with relevant date and client information.
-    :return: DataFrame filtered to include only lapsed clients.
+    :param sales_data: Pandas DataFrame containing sales data.
+                       It must include a 'last_purchase_date' column with dates of the last purchase.
+    :param start_year: Optional integer representing the start year from which to measure inactivity.
+                       Defaults to 2018. Can be set to None to ignore the start year filter and consider all data.
+    :return: A pandas DataFrame filtered to include only the lapsed clients who have not made a purchase since the start year.
     """
 
     columns = list(sales_data.columns) + ["l_period"]
@@ -145,12 +151,12 @@ def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
     def get_lapsed_customers(df1, df2):
         return set(df1["customer_tk"]) - set(df2["customer_tk"])
 
-    for year in range(2018, current_year + 1):
+    for year in range(start_year, current_year + 1):
         for month in range(1, 13):
             if (
                 datetime(current_year - 1, current_month + 1, 1)
                 >= datetime(year, month, 1)
-                > datetime(2018, 7, 1)
+                > datetime(start_year, 7, 1)
             ):
                 counter += 1
                 p1_start, p1_end = (
@@ -194,16 +200,23 @@ def get_lapsed_clients(sales_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_filtered_active_customers(
-    customers_from_sales_data_df: pd.DataFrame, months_threshold: int = 18
+    customers_from_sales_data_df: pd.DataFrame,
+    start_year: Optional[int] = 2020,
+    months_threshold: int = 18,
 ) -> pd.DataFrame:
     """
-    Filter the customers who have been active within a specified number of months.
+    Filter the customers who have been active within a specified number of months since a given start year.
 
-    Active customers are defined as those who have made a purchase within the specified months' threshold.
+    This function filters out customers from the provided sales data DataFrame
+    who have made purchases within the specified months threshold since the start year.
 
-    :param customers_from_sales_data_df: DataFrame containing customer sales data.
-    :param months_threshold: Number of months to define the threshold for customer activity (default is 18 months).
-    :return: DataFrame filtered to include only active customers.
+    :param customers_from_sales_data_df: Pandas DataFrame containing customer sales data.
+                                         It must include a 'last_purchase_date' column.
+    :param start_year: Optional integer representing the start year from which to measure activity.
+                       Defaults to 2020. Can be set to None to disable filtering by start year.
+    :param months_threshold: Integer representing the number of months within which a customer
+                             must have made a purchase to be considered active. Defaults to 18 months.
+    :return: A pandas DataFrame filtered to include only the active customers.
     """
 
     filtered_active_customers_list = []
@@ -244,7 +257,7 @@ def get_filtered_active_customers(
         )
         return get_unique_customers(period_data_df)
 
-    for year in range(2018, current_year + 1):
+    for year in range(start_year, current_year + 1):
         for month in range(1, 13):
             start_date, end_date = get_date_range_for_month(year, month)
             current_month_data_df = filter_data_for_date_range(
