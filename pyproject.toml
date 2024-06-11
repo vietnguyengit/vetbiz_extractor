@@ -14,6 +14,7 @@ black = "24.4.2"
 pymssql = "2.3.0"
 pymysql = "1.1.1"
 python-dotenv = "1.0.1"
+matplotlib = "3.9.0"
 
 
 [build-system]
